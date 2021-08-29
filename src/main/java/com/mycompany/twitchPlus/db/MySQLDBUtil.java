@@ -8,9 +8,6 @@ import java.util.Properties;
 
 public class MySQLDBUtil {
 
-    private static final String INSTANCE = "mysql-instance-2021summer.cliojbiqfegh.us-east-2.rds.amazonaws.com";
-    private static final String PORT_NUM = "3306";
-    private static final String DB_NAME = "jupiter";
     public static String getMySQLAddress() throws IOException {
 
         Properties prop = new Properties();
@@ -21,8 +18,11 @@ public class MySQLDBUtil {
         prop.load(inputStream);
 
 //        read username and password in config file
-        String username = prop.getProperty("user");
-        String password = prop.getProperty("password");
+        String username = prop.getProperty("mysql_user");
+        String password = prop.getProperty("mysql_password");
+        String instance = prop.getProperty("mysql_instance");
+        String port_num = prop.getProperty("mysql_port_num");
+        String db_name = prop.getProperty("mysql_db_name");
         // Encode special characters in your password.
         try {
             password = URLEncoder.encode(password, "UTF-8");
@@ -32,7 +32,7 @@ public class MySQLDBUtil {
 
 
         return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true&serverTimezone=UTC&createDatabaseIfNotExist=true",
-                INSTANCE, PORT_NUM, DB_NAME, username, password);
+                instance, port_num, db_name, username, password);
     }
 
 }

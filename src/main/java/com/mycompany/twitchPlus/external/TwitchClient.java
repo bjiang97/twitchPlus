@@ -2,6 +2,7 @@ package com.mycompany.twitchPlus.external;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mycompany.twitchPlus.db.MySQLDBUtil;
 import com.mycompany.twitchPlus.entity.Game;
 import com.mycompany.twitchPlus.entity.Item;
 import com.mycompany.twitchPlus.entity.ItemType;
@@ -14,14 +15,13 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
 
 public class TwitchClient {
 
-    private static final String TOKEN = "Bearer dlygvgdyw94o8qnic0ofhjuar8teu6";
-    private static final String CLIENT_ID = "idme7bw7dsynldwqmppczv6cpp0nwo";
     private static final String TOP_GAME_URL = "https://api.twitch.tv/helix/games/top?first=%s";
     private static final String GAME_SEARCH_URL_TEMPLATE = "https://api.twitch.tv/helix/games?name=%s";
     private static final int DEFAULT_GAME_LIMIT = 20;
@@ -61,7 +61,7 @@ public class TwitchClient {
     }
 
     // Send HTTP request to Twitch Backend based on the given URL, and returns the body of the HTTP response returned from Twitch backend.
-    private String searchTwitch(String url) throws TwitchException {
+    private String searchTwitch(String url) throws TwitchException, IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
 
         // Define the response handler to parse and return HTTP response body returned from Twitch
@@ -80,6 +80,15 @@ public class TwitchClient {
             return obj.getJSONArray("data").toString();
             // using getJSONArray here because twitch will return key value pair which value is array
         };
+
+        Properties prop = new Properties();
+        String propFileName = "config.properties";
+
+//        read config file by using input stream
+        InputStream inputStream = TwitchClient.class.getClassLoader().getResourceAsStream(propFileName);
+        prop.load(inputStream);
+        String TOKEN = prop.getProperty("twitch_token");
+        String CLIENT_ID = prop.getProperty("twitch_client_id");
 
         try {
             // Define the HTTP request, TOKEN and CLIENT_ID are used for user authentication on Twitch backend
@@ -110,7 +119,7 @@ public class TwitchClient {
     }
 
     // Integrate search() and getGameList() together, returns the top x popular games from Twitch.
-    public List<Game> topGames(int limit) throws TwitchException {
+    public List<Game> topGames(int limit) throws TwitchException, IOException {
         if (limit <= 0) {
             limit = DEFAULT_GAME_LIMIT;
         }
@@ -118,7 +127,7 @@ public class TwitchClient {
     }
 
     // Integrate search() and getGameList() together, returns the dedicated game based on the game name.
-    public Game searchGame(String gameName) throws TwitchException {
+    public Game searchGame(String gameName) throws TwitchException, IOException {
         List<Game> gameList = getGameList(searchTwitch(buildGameURL(GAME_SEARCH_URL_TEMPLATE, gameName, 0)));
         if (gameList.size() != 0) {
             return gameList.get(0);
@@ -138,7 +147,7 @@ public class TwitchClient {
     }
 
     // Returns the top x streams based on game ID.
-    private List<Item> searchStreams(String gameId, int limit) throws TwitchException {
+    private List<Item> searchStreams(String gameId, int limit) throws TwitchException, IOException {
         List<Item> streams = getItemList(searchTwitch(buildSearchURL(STREAM_SEARCH_URL_TEMPLATE, gameId, limit)));
         for (Item item : streams) {
             item.setType(ItemType.STREAM);
@@ -148,7 +157,7 @@ public class TwitchClient {
     }
 
     // Returns the top x clips based on game ID.
-    private List<Item> searchClips(String gameId, int limit) throws TwitchException {
+    private List<Item> searchClips(String gameId, int limit) throws TwitchException, IOException {
         List<Item> clips = getItemList(searchTwitch(buildSearchURL(CLIP_SEARCH_URL_TEMPLATE, gameId, limit)));
         for (Item item : clips) {
             item.setType(ItemType.CLIP);
@@ -157,7 +166,7 @@ public class TwitchClient {
     }
 
     // Returns the top x videos based on game ID.
-    private List<Item> searchVideos(String gameId, int limit) throws TwitchException {
+    private List<Item> searchVideos(String gameId, int limit) throws TwitchException, IOException {
         List<Item> videos = getItemList(searchTwitch(buildSearchURL(VIDEO_SEARCH_URL_TEMPLATE, gameId, limit)));
         for (Item item : videos) {
             item.setType(ItemType.VIDEO);
@@ -165,7 +174,7 @@ public class TwitchClient {
         return videos;
     }
 
-    public List<Item> searchByType(String gameId, ItemType type, int limit) throws TwitchException {
+    public List<Item> searchByType(String gameId, ItemType type, int limit) throws TwitchException, IOException {
         List<Item> items = Collections.emptyList();
 
         switch (type) {
@@ -187,7 +196,7 @@ public class TwitchClient {
         return items;
     }
 
-    public Map<String, List<Item>> searchItems(String gameId) throws TwitchException {
+    public Map<String, List<Item>> searchItems(String gameId) throws TwitchException, IOException {
         Map<String, List<Item>> itemMap = new HashMap<>();
         for (ItemType type : ItemType.values()) {
             itemMap.put(type.toString(), searchByType(gameId, type, DEFAULT_SEARCH_LIMIT));

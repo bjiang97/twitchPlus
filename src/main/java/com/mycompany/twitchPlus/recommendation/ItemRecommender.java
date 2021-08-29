@@ -8,6 +8,7 @@ import com.mycompany.twitchPlus.entity.ItemType;
 import com.mycompany.twitchPlus.external.TwitchClient;
 import com.mycompany.twitchPlus.external.TwitchException;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ public class ItemRecommender {
             List<Item> items;
             try {
                 items = client.searchByType(game.getId(), type, DEFAULT_PER_GAME_RECOMMENDATION_LIMIT);
-            } catch (TwitchException e) {
+            } catch (TwitchException | IOException e) {
                 throw new RecommendationException("");
             }
             for (Item item : items) {
@@ -74,7 +75,7 @@ public class ItemRecommender {
             List<Item> items;
             try {
                 items = client.searchByType(favoriteGame.getKey(), type, DEFAULT_PER_GAME_RECOMMENDATION_LIMIT);
-            } catch (TwitchException e) {
+            } catch (TwitchException | IOException e) {
                 throw new RecommendationException("Failed to get recommendation result");
             }
 
@@ -97,7 +98,7 @@ public class ItemRecommender {
         List<Game> topGames;
         try {
             topGames = client.topGames(DEFAULT_GAME_LIMIT);
-        } catch (TwitchException e) {
+        } catch (TwitchException | IOException e) {
             throw new RecommendationException("Failed to get game data for recommendation");
         }
 
@@ -131,7 +132,7 @@ public class ItemRecommender {
                 List<Game> topGames;
                 try {
                     topGames = client.topGames(DEFAULT_GAME_LIMIT);
-                } catch (TwitchException e) {
+                } catch (TwitchException | IOException e) {
                     throw new RecommendationException("Failed to get game data for recommendation");
                 }
                 recommendedItemMap.put(entry.getKey(), recommendByTopGames(ItemType.valueOf(entry.getKey()), topGames));
